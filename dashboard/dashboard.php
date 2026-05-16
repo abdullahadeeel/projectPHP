@@ -39,9 +39,34 @@ if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['delete'])){
         <a href="dashboard.php?action=READ">My Dishes</a>
         <a href="dashboard.php?action=CREATE">Publish Dish</a>
         <a href="dashboard.php?action=ORDERS">Orders</a>
+        <a href="dashboard.php?action=CART">Cart</a>
       </div>
     </aside>
     <section class="my-dishes">
+
+      <?php
+      if(isset($_GET['action']) && $_GET['action'] == "CART"){
+          echo "<h2>Your Cart</h2>";
+          $query = "SELECT cart.*, dish.title, dish.price FROM cart JOIN dish ON cart.dishId = dish.id WHERE cart.userId = ?";
+          $stmt = $conn->prepare($query);
+          $stmt->bind_param("i", $userId);
+          $stmt->execute();
+          $result = $stmt->get_result();
+
+          if($result->num_rows > 0){
+              echo "<ul>";
+              while($row = $result->fetch_assoc()){
+                  echo "<li>" . htmlspecialchars($row['title']) . " - Qty: " . $row['quantity'] . " - $" . ($row['price'] * $row['quantity']) . "</li>";
+              }
+              echo "</ul>";
+              echo "<form action='../actions/checkout.php' method='POST'>
+                        <button type='submit'>Checkout Now</button>
+                    </form>";
+          } else {
+              echo "<p>Your cart is empty.</p>";
+          }
+      }
+      ?>
 
       <?php 
       if(isset($_GET['action']) && $_GET['action'] == "READ"){
@@ -119,7 +144,32 @@ if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['delete'])){
         
         if(isset($_GET['action']) && $_GET['action'] == "ORDERS"){
             echo "<h2>Orders</h2>";
-            echo "<p>Order management system coming soon!</p>";
+            $query = "SELECT * FROM orders WHERE userId = ? ORDER BY created_at DESC";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if($result->num_rows > 0){
+                echo "<table border='1' style='width:100%; border-collapse: collapse; margin-top: 20px;'>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Total Price</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>";
+                while($row = $result->fetch_assoc()){
+                    echo "<tr>
+                            <td>#" . htmlspecialchars($row['id']) . "</td>
+                            <td>$" . htmlspecialchars($row['total_price']) . "</td>
+                            <td>" . htmlspecialchars(ucfirst($row['status'])) . "</td>
+                            <td>" . htmlspecialchars($row['created_at']) . "</td>
+                          </tr>";
+                }
+                echo "</table>";
+            } else {
+                echo "<p>No orders found.</p>";
+            }
         }
 
         if( $_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['edit'])){

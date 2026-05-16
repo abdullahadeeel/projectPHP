@@ -21,25 +21,54 @@ Before running this project, ensure you have the following installed:
 
 ## 📦 Installation & Setup
 
-### 1. Database Initialization
-This project includes an automated script to set up the database and tables for you.
+### 1. Folder Placement
+Move the entire `projectPHP` folder into your local server's root directory:
+- **XAMPP:** `C:\xampp\htdocs\`
+- **WAMP:** `C:\wamp64\www\`
 
-1. Start your Apache and MySQL modules (e.g., in XAMPP Control Panel).
-2. Open your browser and navigate to:
-   ```
-   http://localhost/projectPHP/install.php
-   ```
-3. You should see a message saying "Database and Tables created successfully."
+### 2. Start Services
+1. Open the **XAMPP Control Panel**.
+2. Click **Start** for both **Apache** and **MySQL**.
 
-### 2. Configuration (Optional)
-If your MySQL username or password is not the default (root/empty), update the following files:
-- `connection.php`
-- `install.php`
+### 3. Database Configuration
+You can set up the database in two simple steps:
 
-### 3. Usage
-- **Home Page:** Access the main site at `index.html`.
-- **Authentication:** Go to the user icon to Sign Up or Login.
-- **Dashboard:** Once logged in, you can view your dishes, publish new ones, or edit/delete existing entries.
+#### Step A: Create the Database Manually
+1. Open your browser and go to `http://localhost/phpmyadmin/`.
+2. Click on **New** in the left sidebar.
+3. Enter a name for your database (e.g., `cuisine_db`) and click **Create**.
+
+#### Step B: Update the Project Variables
+Open the following files in your code editor and ensure the `$db` (or `$dbname`) variable matches the name you just created:
+- **`connection.php`**: ` $db = 'your_database_name'; `
+- **`install.php`**: ` $dbname = 'your_database_name'; `
+
+### 4. Run the Installer Script
+Once the database is created and the variables are set, run the following URL in your browser to automatically create the tables:
+```
+http://localhost/projectPHP/install.php
+```
+The script will create the following tables:
+- `users`: User accounts.
+- `dish`: Food items/dishes managed in the dashboard.
+- `cart`: Shopping cart items.
+- `orders`: Order history.
+- `order_items`: Specific items within each order.
+
+### Checkout Workflow
+1. Users add items to their `cart` by posting to `actions/add_to_cart.php` (with `dishId`).
+2. Running `actions/checkout.php` will:
+   - Calculate the total price based on cart items.
+   - Insert a record into `orders`.
+   - Move all items from `cart` to `order_items`.
+   - Empty the `cart`.
+
+---
+
+## 🚀 Usage
+- **Home Page:** Access the main site at `http://localhost/projectPHP/index.html`.
+- **Authentication:** Click the user icon on the home page to Sign Up or Login.
+- **Dashboard:** Once logged in, you can manage your dishes.
 
 ---
 
