@@ -3,7 +3,7 @@
   $hostname = 'localhost';
   $username = 'root';
   $password = '';
-  $db = 'you data base name';
+  $db = 'cuisine_db';
   $conn = new mysqli($hostname,$username,$password,$db);
 
   if($conn->connect_error){
