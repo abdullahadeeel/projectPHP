@@ -66,6 +66,40 @@ if ($conn->query($sqlOrders) === TRUE) {
     echo "Error creating table 'orders': " . $conn->error . "<br>";
 }
 
+// 6. Create 'cart' table
+$sqlCart = "CREATE TABLE IF NOT EXISTS cart (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    userId INT(11) NOT NULL,
+    dishId INT(11) NOT NULL,
+    quantity INT(11) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (dishId) REFERENCES dish(id) ON DELETE CASCADE
+)";
+
+if ($conn->query($sqlCart) === TRUE) {
+    echo "Table 'cart' created successfully.<br>";
+} else {
+    echo "Error creating table 'cart': " . $conn->error . "<br>";
+}
+
+// 7. Create 'order_items' table
+$sqlOrderItems = "CREATE TABLE IF NOT EXISTS order_items (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    orderId INT(11) NOT NULL,
+    dishId INT(11) NOT NULL,
+    quantity INT(11) NOT NULL,
+    price INT(11) NOT NULL,
+    FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (dishId) REFERENCES dish(id) ON DELETE CASCADE
+)";
+
+if ($conn->query($sqlOrderItems) === TRUE) {
+    echo "Table 'order_items' created successfully.<br>";
+} else {
+    echo "Error creating table 'order_items': " . $conn->error . "<br>";
+}
+
 echo "<br>Setup complete! You can now log in and use the dashboard.";
 
 $conn->close();
