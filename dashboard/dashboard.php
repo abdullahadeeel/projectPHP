@@ -1,9 +1,22 @@
 
 <?php 
 include('../connection.php'); 
-$userId = $_COOKIE['id'];
+$userId = $_COOKIE['id'] ?? null;
 if(!$userId){
   header('Location: ../pages/login.html');
+  exit();
+}
+
+if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['delete'])){
+  $id = $_POST['id'];
+  $query = "DELETE FROM dish WHERE id = ? AND userId = ?";
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param("ii", $id, $userId);
+  if(!$stmt->execute()){
+    die("DELETION FAILED");
+  }
+  header("Location: dashboard.php?action=READ");
+  exit();
 }
 
 ?>
@@ -31,41 +44,40 @@ if(!$userId){
     <section class="my-dishes">
 
       <?php 
-      if($_SERVER['REQUEST_METHOD'] == "GET" && $_GET['action'] == "READ"){
-        $query = "SELECT * FROM dish WHERE userId = '$userId'";
-        $result = $conn->query($query);
-        echo "<h2>My Dishes<h2>";
-        while($row = $result->fetch_assoc()){ 
-        echo "
-            <div class='dish-card'>
-                <div>
-                  <img src='{$row['image']}' alt='product dish picture' width='100px' >
-                </div>
-                <div class='text-part'>
-                  <h2>{$row['title']}</h2>
-                  <p>{$row['descripiton']}</p>
+      if(isset($_GET['action']) && $_GET['action'] == "READ"){
+        $query = "SELECT * FROM dish WHERE userId = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        echo "<h2>My Dishes</h2>";
+        if($result->num_rows > 0){
+          while($row = $result->fetch_assoc()){ 
+          echo "
+              <div class='dish-card'>
                   <div>
-                    <form action='dashboard.php?action=EDIT' method='GET'>
-                      <input hidden value='{$row['id']}' name='id' >
-                      <button type='submit' name='edit'>Edit</button>
-                    </form>
-                    <form>
-                      <input hidden value='{$row['id']}' name='id' >
-                      <button type='submit' name='delete'>Delete</button>
-                    </form>
+                    <img src='{$row['image']}' alt='product dish picture' width='100px' >
                   </div>
-                </div>
-            </div>
-        ";         
-        }
-  
-        if(isset($_POST['delete'])){
-          $id = $_POST['id'];
-          $query = "DELETE FROM dish WHERE  id = $id";
-          if(!$conn->query($query)){
-            die("DELTEION FAILED");
+                  <div class='text-part'>
+                    <h2>" . htmlspecialchars($row['title']) . "</h2>
+                    <p>" . htmlspecialchars($row['description']) . "</p>
+                    <div>
+                      <form action='dashboard.php' method='GET'>
+                        <input type='hidden' name='action' value='EDIT'>
+                        <input type='hidden' value='{$row['id']}' name='id' >
+                        <button type='submit'>Edit</button>
+                      </form>
+                      <form action='dashboard.php' method='POST' onsubmit=\"return confirm('Are you sure you want to delete this dish?');\">
+                        <input type='hidden' value='{$row['id']}' name='id' >
+                        <button type='submit' name='delete'>Delete</button>
+                      </form>
+                    </div>
+                  </div>
+              </div>
+          ";         
           }
-          header("Location: dashboard.php?action=READ");
+        } else {
+          echo "<p>No dishes found. <a href='dashboard.php?action=CREATE'>Publish your first dish!</a></p>";
         }
       }
       ?>
@@ -73,59 +85,86 @@ if(!$userId){
 
       <?php
 
-        if($_SERVER['REQUEST_METHOD'] == "GET" && $_GET['action'] == "EDIT"){
-          $id = $_GET['id'];
-          $query = "SELECT * FROM dish WHERE id = $id";
-          $result = $conn->query($query);
+        if(isset($_GET['action']) && $_GET['action'] == "EDIT"){
+          $id = (int)$_GET['id'];
+          $query = "SELECT * FROM dish WHERE id = ? AND userId = ?";
+          $stmt = $conn->prepare($query);
+          $stmt->bind_param("ii", $id, $userId);
+          $stmt->execute();
+          $result = $stmt->get_result();
           $row = $result->fetch_assoc();
-          if($result->num_rows > 0){
+          if($row){
             echo "
             <h2>Edit Dish</h2>
-            <form action='dashboard.php?action=READ' class='edit-form' method='post'>
-
+            <form action='dashboard.php?action=EDIT' class='edit-form' method='post' enctype='multipart/form-data'>
+              <input type='hidden' name='id' value='{$row['id']}'>
               <div class='img-input'>
                 <label for='imgUpload'>
-                  <img id='img-dish' src='{$row['image']}' alt='upload iconS' height='180px' width='180px'>
+                  <img id='img-dish' src='{$row['image']}' alt='upload icon' height='180px' width='180px'>
                 </label>
                 <input type='file' id='imgUpload' name='imgUpload'>
               </div>
               <div>
-                <input type='text' name='title' placeholder='Title of Dish' value='{$row['title']}'>
-                <input type='text' name='description' placeholder='Description of Dish' value='{$row['description']}'>
-                <input type='number' name='price' placeholder='Price of Dish' value='{$row['price']}'>
+                <input type='text' name='title' placeholder='Title of Dish' value='" . htmlspecialchars($row['title']) . "' required>
+                <input type='text' name='description' placeholder='Description of Dish' value='" . htmlspecialchars($row['description']) . "' required>
+                <input type='number' name='price' placeholder='Price of Dish' value='" . htmlspecialchars($row['price']) . "' required>
                 <button name='edit' type='submit' >Submit</button>
               </div>
             </form>
             ";
-          }    
+          } else {
+            echo "<p>Dish not found or access denied.</p>";
+          }   
         }
+        
+        if(isset($_GET['action']) && $_GET['action'] == "ORDERS"){
+            echo "<h2>Orders</h2>";
+            echo "<p>Order management system coming soon!</p>";
+        }
+
         if( $_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['edit'])){
+          $id = $_POST['id'];
           $title = $_POST['title'];
           $description = $_POST['description'];
           $price = $_POST['price'];
 
-          $targetDir = 'uploads/';
-          $imageName = basename($_FILES['imgUpload']['name']);
-          $extension = pathinfo($imageName, PATHINFO_DEFAULT);
-          $targetFile = $targetDir . $userId . "_" . uniqid() . $extension;
+          // Fetch old image to delete if new one is uploaded
+          $query = "SELECT image FROM dish WHERE id = ? AND userId = ?";
+          $stmt = $conn->prepare($query);
+          $stmt->bind_param("ii", $id, $userId);
+          $stmt->execute();
+          $oldRow = $stmt->get_result()->fetch_assoc();
 
-          if(!oldlink($row['image'])){
-            die("Image delete failed");
+          $targetFile = $oldRow['image'];
+
+          if(isset($_FILES['imgUpload']) && $_FILES['imgUpload']['error'] == 0){
+            $targetDir = 'uploads/';
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
+            $imageName = basename($_FILES['imgUpload']['name']);
+            $extension = pathinfo($imageName, PATHINFO_EXTENSION);
+            $targetFile = $targetDir . $userId . "_" . uniqid() . "." . $extension;
+
+            if($oldRow['image'] && file_exists($oldRow['image'])){
+              unlink($oldRow['image']);
+            }
+
+            if(!move_uploaded_file($_FILES['imgUpload']['tmp_name'], $targetFile))
+            {
+              die("Uploading photo Failed");
+            }
           }
 
-          if(!move_uploaded_file($_FILES['imgUpload']['tmp_name'], $targetFile))
-          {
-            die("Uploading photo Failed");
+          $query = "UPDATE dish SET image = ?, title = ?, description = ?, price = ? WHERE id = ? AND userId = ?";
+          $stmt = $conn->prepare($query);
+          $stmt->bind_param("sssiii", $targetFile, $title, $description, $price, $id, $userId);
+
+          if(!$stmt->execute()){
+            die("UPDATE OF RECORD FAILED");
           }
-
-
-
-          $query = "UPDATE dish SET image = $targetFile , title = '$title', description = '$description' , price = $price";
-
-          if(!$conn->query($query)){
-            die("UPDATION OF RECORD FAILED");
-          }
-          header("dashboard.php?action=READ");
+          header("Location: dashboard.php?action=READ");
+          exit();
 
         }
       
@@ -133,21 +172,21 @@ if(!$userId){
 
       <?php 
       
-        if($_SERVER['REQUEST_METHOD'] == "GET" && $_GET['action'] == "CREATE"){
+        if(isset($_GET['action']) && $_GET['action'] == "CREATE"){
           echo "
             <h2>Publish Dish</h2>
-            <form action='#' class='edit-form' method='post'>
+            <form action='dashboard.php?action=CREATE' class='edit-form' method='post' enctype='multipart/form-data'>
 
               <div class='img-input'>
                 <label for='imgUpload'>
-                  <img id='img-dish' src='../assests/upload.png' alt='upload iconS' height='180px' width='180px'>
+                  <img id='img-dish' src='../assests/upload.png' alt='upload icon' height='180px' width='180px'>
                 </label>
-                <input type='file' id='imgUpload' name='imgUpload'>
+                <input type='file' id='imgUpload' name='imgUpload' required>
               </div>
               <div>
-                <input type='text' name='title' placeholder='Title of Dish' >
-                <input type='text' name='description' placeholder='Description of Dish' >
-                <input type='number' name='price' placeholder='Price of Dish' >
+                <input type='text' name='title' placeholder='Title of Dish' required>
+                <input type='text' name='description' placeholder='Description of Dish' required>
+                <input type='number' name='price' placeholder='Price of Dish' required>
                 <button name='publish' type='submit' >Submit</button>
               </div>
             </form>
@@ -160,9 +199,12 @@ if(!$userId){
             $price = $_POST['price'];
   
             $targetDir = 'uploads/';
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
             $imageName = basename($_FILES['imgUpload']['name']);
-            $extension = pathinfo($imageName, PATHINFO_DEFAULT);
-            $targetFile = $targetDir . $userId . "_" . uniqid() . $extension;
+            $extension = pathinfo($imageName, PATHINFO_EXTENSION);
+            $targetFile = $targetDir . $userId . "_" . uniqid() . "." . $extension;
   
   
             if(!move_uploaded_file($_FILES['imgUpload']['tmp_name'], $targetFile))
@@ -172,12 +214,15 @@ if(!$userId){
   
   
   
-            $query = "UPDATE dish SET image = $targetFile , title = '$title', description = '$description' , price = $price";
+            $query = "INSERT INTO dish (image, title, description, price, userId) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("sssii", $targetFile, $title, $description, $price, $userId);
   
-            if(!$conn->query($query)){
-              die("UPDATION OF RECORD FAILED");
+            if(!$stmt->execute()){
+              die("INSERTION OF RECORD FAILED");
             }
-            header("dashboard.php?action=READ");
+            header("Location: dashboard.php?action=READ");
+            exit();
   
         
         }

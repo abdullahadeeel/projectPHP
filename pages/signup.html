@@ -16,21 +16,21 @@
                 <p>The Best Fast food deleviry Service</p>
             </div>
         </div>
-        <input type="email" placeholder="Email" required >
-        <input id='pass' type="password" placeholder="Password" required>
-        <input id='cpass' type="password" placeholder="Confirm Password" required>
+        <input type="email" name="email" placeholder="Email" required >
+        <input id='pass' name="password" type="password" placeholder="Password" required>
+        <input id='cpass' name="confirm_password" type="password" placeholder="Confirm Password" required>
         <div>
             <button name='signup' type="submit">Login</button>
         </div>
       </form>
 
     <script>
-      const pass = document.getElemetById('pass');
-      const cpass = document.getElemetById('cpass');
+      const pass = document.getElementById('pass');
+      const cpass = document.getElementById('cpass');
 
       function Validate(){
         if(pass.value != cpass.value){
-          alert("Password Must Be Match");
+          alert("Password Must Match");
         }
       }
     </script>

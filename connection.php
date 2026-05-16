@@ -6,8 +6,8 @@
   $db = 'you data base name';
   $conn = new mysqli($hostname,$username,$password,$db);
 
-  if($conn->error){
-    die("FAILED TO CONNECT WITH DATABSE");
+  if($conn->connect_error){
+    die("FAILED TO CONNECT WITH DATABASE: " . $conn->connect_error);
   }
 
 ?>

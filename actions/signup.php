@@ -1,5 +1,5 @@
 <?php
-    if(isset($_POST['signup']){
+    if(isset($_POST['signup'])){
     include("../connection.php"); // Ensure the connection file is included
 
     // Get the email and password from the POST request
@@ -16,7 +16,7 @@
     if ($result->num_rows > 0) {
         // User already exists
         echo "User Already Exists";
-        return;
+        exit();
     }
 
     // Hash the password

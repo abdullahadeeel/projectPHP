@@ -1,5 +1,5 @@
 <?php
-   if(isset($_POST['login']){
+   if(isset($_POST['login'])){
 
          include("../connection.php");
 
@@ -25,7 +25,7 @@
             setcookie("id", $row['id'], [
                 'expires' => time() + 3600, // Cookie expires in 1 hour
                 'path' => '/',
-                'secure' => true,          // Ensure HTTPS usage
+                'secure' => false,          // Changed to false for local testing
                 'httponly' => true,        // Prevent JavaScript access
                 'samesite' => 'Strict'     // Prevent cross-site requests
             ]);
@@ -36,12 +36,12 @@
         } else {
             // Invalid password
             echo "Email or Password Invalid!";
-            return;
+            exit();
         }
     } else {
         // Email not found
         echo "Email or Password Invalid!";
-        return;
+        exit();
     }      
     }
 ?>
